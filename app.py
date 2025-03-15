@@ -1,19 +1,21 @@
+import os
 from flask import Flask, render_template, request, send_file
 from transformers import pipeline
 from deep_translator import GoogleTranslator
 import torch
-import os
 
 app = Flask(__name__)
 
-# Check if GPU is available
+# Set the device to GPU if available, else use CPU
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
-# Load the summarization model (optimized)
+# Load the summarization model
 summarizer = pipeline("summarization", model="facebook/bart-large-cnn", device=0 if device == "cuda" else -1)
 
-translator = GoogleTranslator(source="auto", target="kn")  # Kannada translation
+# Initialize the translator (auto detects source language, translates to Kannada)
+translator = GoogleTranslator(source="auto", target="kn")
 
+# Folder to save uploaded files
 UPLOAD_FOLDER = "uploads"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
@@ -25,17 +27,18 @@ def index():
             filepath = os.path.join(UPLOAD_FOLDER, file.filename)
             file.save(filepath)
 
+            # Read the text from the uploaded file
             with open(filepath, "r", encoding="utf-8") as f:
                 text = f.read()
 
             # Summarize the text
             summary = summarizer(text, max_length=150, min_length=50, do_sample=False)[0]["summary_text"]
 
-            # Translate full text & summary
+            # Translate full text and summary to Kannada
             full_kannada = translator.translate(text)
             summary_kannada = translator.translate(summary)
 
-            # Save results
+            # Save the translated text to files
             full_trans_path = os.path.join(UPLOAD_FOLDER, "kannada_translation.txt")
             summary_trans_path = os.path.join(UPLOAD_FOLDER, "kannada_summarized_translation.txt")
 
@@ -48,11 +51,12 @@ def index():
 
     return render_template("index.html")
 
+
 @app.route("/download/<filename>")
 def download(filename):
     return send_file(os.path.join(UPLOAD_FOLDER, filename), as_attachment=True)
 
 
+# Expose app for Vercel deployment
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 10000))
-    app.run(host="0.0.0.0", port=port)
+    app.run(debug=True)
