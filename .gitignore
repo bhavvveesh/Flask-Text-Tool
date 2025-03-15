@@ -1,0 +1,23 @@
+# Python & VS Code
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.vscode/
+venv/
+*.venv
+
+# Render & Deployment
+logs/
+*.log
+uploads/
+
+# Environment & Configs
+.env
+config.yaml
+credentials.json
+
+# Package Management
+*.egg-info/
+pip-log.txt
+pip-delete-this-directory.txt
